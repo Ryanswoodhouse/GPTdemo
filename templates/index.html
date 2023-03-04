@@ -1,86 +1,109 @@
 <!DOCTYPE html>
 <html>
-	<head>
-		<title>ChatGPT</title>
-		<link
-			rel="stylesheet"
-			href="https://cdn.bootcss.com/bootstrap/4.0.0/css/bootstrap.min.css"
-		/>
-		<script src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
-		<script src="https://cdn.bootcss.com/popper.js/1.12.9/umd/popper.min.js"></script>
-		<script src="https://cdn.bootcss.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
-		<script src="https://cdn.jsdelivr.net/npm/markdown-it@13.0.1/dist/markdown-it.min.js"></script>
-		<link
-			rel="stylesheet"
-			href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.7.0/build/styles/default.min.css"
-		/>
-		<script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.7.0/build/highlight.min.js"></script>
-		<script>
-			hljs.initHighlightingOnLoad();
-			hljs.highlightAll();
-		</script>
-	</head>
-	<body>
-		<nav class="navbar navbar-expand-lg navbar-light bg-light">
-			<a class="navbar-brand mx-auto" href="#">ChatGPT</a>
-		</nav>
-		<div class="container mt-3">
-			<div class="row">
-        <div class="col-md-6 offset-md-3 col-12">
-          <ul class="list-group" id="chat-window">
-          </ul>
-          <form id="message-form">
-            <div class="input-group mb-3">
-              <input type="text" class="form-control" id="message-input" placeholder="输入消息...">
-              <div class="input-group-append">
-                <button class="btn btn-primary" type="submit">发送</button>
-              </div>
-            </div>
-          </form>
+    <head>
+        <title>GPTdemo</title>
+        <style>
+            body {
+                margin: 0;
+                padding: 0;
+                height: 100vh;
+                display: flex;
+                flex-direction: column;
+            }
+            #chatbot-container {
+                flex-grow: 1;
+                display: flex;
+                flex-direction: column;
+                justify-content: flex-end;
+                padding: 20px;
+            }
+            .message-container {
+                display: flex;
+                margin-bottom: 10px;
+            }
+            .user-message {
+                margin-left: auto;
+                background-color: #DCF8C6;
+                border-radius: 20px;
+                padding: 10px;
+                max-width: 70%;
+            }
+            .bot-message {
+                background-color: #f1f0f0;
+                border-radius: 20px;
+                padding: 10px;
+                margin-right: auto;
+                max-width: 70%;
+            }
+            input[type=text] {
+                width: 100%;
+                padding: 12px 20px;
+                margin: 8px 0;
+                box-sizing: border-box;
+                border: none;
+                border-bottom: 2px solid #4CAF50;
+            }
+            input[type=submit] {
+                background-color: #4CAF50;
+                color: white;
+                padding: 14px 20px;
+                margin: 8px 0;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+            }
+            input[type=submit]:hover {
+                background-color: #45a049;
+            }
+        </style>
+    </head>
+    <body>
+        <h1 style="text-align:center">GPTdemo</h1>
+        <div id="chatbot-container">
+            <div class="bot-message"> How May I assist you,today my lord?</div>
         </div>
-      </div>
-		</div>
-		<script>
-			var chatWindow = $("#chat-window");
-			var messageInput = $("#message-input");
+        <form id="user-form" style="padding:20px;">
+          <input type="text" id="message-input" placeholder="Type your message here...">
+          <input type="submit" value="Submit">
+        </form>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+        <script>
+            $(document).ready(function () {
+                var chatbox = $('#chatbot-container');
+                var messageInput = $('#message-input');
+                $('#user-form').on('submit', function (event) {
+                    event.preventDefault();
+                    var userMessage = messageInput.val();
+                    if (userMessage) {
+                        chatbox.append(
+                            '<div class="message-container"><div class="user-message">' +
+                                userMessage +
+                                '</div></div>'
+                        );
+                        messageInput.val('');
 
-			$("#message-form").on("submit", function (event) {
-				event.preventDefault();
-				var message = messageInput.val();
-				if (message) {
-					chatWindow.append(
-						"<li class='list-group-item'><b>我:</b> " + message + "</li>"
-					);
-					messageInput.val("");
-					$.ajax({
-						url: "/get_response",
-						type: "POST",
-						data: { message: message },
-						success: function (response) {
-							var md = new markdownit({
-								highlight: function (str, lang) {
-									if (lang && hljs.getLanguage(lang)) {
-										try {
-											return hljs.highlight(lang, str).value;
-										} catch (__) {}
-									}
-
-									return ""; // 使用额外的默认转义
-								},
-							});
-							var html = md.render(response);
-							chatWindow.append(
-								"<li class='list-group-item'><b>ChatGPT:</b> " + html + "</li>"
-							);
-						},
-						error: function () {
-							chatWindow.append(
-								"<li class='list-group-item text-danger'>发送消息失败</li>"
-							);
-						},
-					});
-				}
-			});
-		</script>
-	</body>
+                        $.ajax({
+                            url: '/get_response',
+                            type: 'POST',
+                            data: { message: userMessage },
+                            success: function (response) {
+                                chatbox.append(
+                                    '<div class="message-container"><div class="bot-message">' +
+                                        response +
+                                        '</div></div>'
+                                );
+                                $("#chatbot-container").scrollTop($("#chatbot-container")[0].scrollHeight);
+                            },
+                            error: function () {
+                                chatbox.append(
+                                    "<div class='bot-message'>Sorry, I couldn't get that. Can you please try again?</div>"
+                                );
+                                $("#chatbot-container").scrollTop($("#chatbot-container")[0].scrollHeight);
+                            },
+                        });
+                    }
+                });
+            });
+        </script>
+    </body>
 </html>
